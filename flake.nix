@@ -43,6 +43,7 @@
               pre-commit
               nodejs
               playwright-driver
+              markdownlint-cli2
             ]);
           };
         };
