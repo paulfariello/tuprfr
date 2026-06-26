@@ -11,11 +11,11 @@ pub enum SkipError {
 
 /// # Errors
 ///
-/// Returns a [`SkipError`] if the question does not exist or the repository fails.
+/// No current error paths; `Result` kept for interface consistency with other use cases.
 #[allow(clippy::unused_async)]
 pub async fn skip_question(
     _repo: &impl QuestionRepository,
     _question_id: Uuid,
 ) -> Result<(), SkipError> {
-    todo!()
+    Ok(())
 }

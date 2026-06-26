@@ -5,9 +5,9 @@ use crate::domain::model::SessionData;
 use crate::AppState;
 use askama::Template;
 use axum::{
-    extract::{Path, State},
+    extract::{Form, Path, State},
     http::StatusCode,
-    response::{IntoResponse, Response},
+    response::{IntoResponse, Redirect, Response},
     routing::{get, post},
     Router,
 };
@@ -38,6 +38,11 @@ struct QuestionTemplate {
 #[derive(Template)]
 #[template(path = "pool_exhaustion.html")]
 struct PoolExhaustionTemplate;
+
+#[derive(serde::Deserialize)]
+struct SkipForm {
+    question_id: Uuid,
+}
 
 const SESSION_KEY: &str = "data";
 
@@ -78,8 +83,22 @@ async fn post_vote_handler(State(_state): State<AppState>, _session: Session) ->
     StatusCode::NOT_IMPLEMENTED
 }
 
-async fn post_skip_handler(State(_state): State<AppState>, _session: Session) -> StatusCode {
-    StatusCode::NOT_IMPLEMENTED
+async fn post_skip_handler(
+    State(_state): State<AppState>,
+    session: Session,
+    Form(form): Form<SkipForm>,
+) -> Result<impl IntoResponse, AppError> {
+    let mut session_data: SessionData = session
+        .get(SESSION_KEY)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .unwrap_or_default();
+    session_data.seen_question_ids.insert(form.question_id);
+    session
+        .insert(SESSION_KEY, &session_data)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    Ok(Redirect::to("/"))
 }
 
 async fn get_new_question_form_handler(
