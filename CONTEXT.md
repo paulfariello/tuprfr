@@ -38,7 +38,7 @@ The terminal state when a **Session** has Voted on or Skipped every published **
 
 ## Skip
 
-A **Session** action that reveals the result distribution of a **Question** without recording a **Vote**. The Question is marked as seen in the Session so it is not shown again. No skip count is stored server-side.
+A **Session** action that marks a **Question** as seen and immediately loads the next random Question, without recording a **Vote** and without revealing the result distribution. No skip count is stored server-side.
 
 ## Submission
 
