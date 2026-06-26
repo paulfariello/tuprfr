@@ -1,7 +1,9 @@
 use crate::adapters::inbound::http::error::AppError;
 use crate::adapters::outbound::db::question_repo::SqlxQuestionRepository;
+use crate::application::use_cases::cast_vote::cast_vote;
 use crate::application::use_cases::get_next_question::get_next_question;
 use crate::domain::model::SessionData;
+use crate::domain::ports::question_repository::QuestionRepository;
 use crate::AppState;
 use askama::Template;
 use axum::{
@@ -44,6 +46,19 @@ struct SkipForm {
     question_id: Uuid,
 }
 
+#[derive(serde::Deserialize)]
+struct VoteForm {
+    question_id: Uuid,
+    option_id: Uuid,
+}
+
+#[derive(Template)]
+#[template(path = "results.html")]
+struct ResultsTemplate {
+    count_a: u64,
+    count_b: u64,
+}
+
 const SESSION_KEY: &str = "data";
 
 async fn get_next_question_handler(
@@ -79,8 +94,33 @@ async fn get_next_question_handler(
     }
 }
 
-async fn post_vote_handler(State(_state): State<AppState>, _session: Session) -> StatusCode {
-    StatusCode::NOT_IMPLEMENTED
+async fn post_vote_handler(
+    State(state): State<AppState>,
+    session: Session,
+    Form(form): Form<VoteForm>,
+) -> Result<impl IntoResponse, AppError> {
+    let mut session_data: SessionData = session
+        .get(SESSION_KEY)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .unwrap_or_default();
+    if session_data.id.is_none() {
+        session_data.id = Some(Uuid::new_v4());
+    }
+    let session_id = session_data.id.unwrap();
+    let repo = SqlxQuestionRepository::new(state.db);
+    cast_vote(&repo, form.question_id, form.option_id, session_id)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    session_data.seen_question_ids.insert(form.question_id);
+    session
+        .insert(SESSION_KEY, &session_data)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    Ok(Redirect::to(&format!(
+        "/questions/{}/results",
+        form.question_id
+    )))
 }
 
 async fn post_skip_handler(
@@ -113,9 +153,14 @@ async fn post_question_handler(State(_state): State<AppState>, _session: Session
 }
 
 async fn get_question_results_handler(
-    State(_state): State<AppState>,
-    Path(_id): Path<Uuid>,
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
     _session: Session,
-) -> StatusCode {
-    StatusCode::NOT_IMPLEMENTED
+) -> Result<impl IntoResponse, AppError> {
+    let repo = SqlxQuestionRepository::new(state.db);
+    let (count_a, count_b) = repo
+        .vote_counts(id)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    Ok(ResultsTemplate { count_a, count_b }.into_response())
 }

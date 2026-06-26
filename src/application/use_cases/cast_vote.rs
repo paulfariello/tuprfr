@@ -1,5 +1,6 @@
 use crate::domain::model::Vote;
 use crate::domain::ports::question_repository::{QuestionRepository, RepositoryError};
+use chrono::Utc;
 use uuid::Uuid;
 
 #[derive(Debug, thiserror::Error)]
@@ -16,14 +17,27 @@ pub enum CastVoteError {
 
 /// # Errors
 ///
-/// Returns a [`CastVoteError`] if the question or option is invalid, the
-/// session has already voted, or the repository fails.
-#[allow(clippy::unused_async)]
+/// Returns [`CastVoteError`] if the question is not found, the option is invalid, or the repository fails.
 pub async fn cast_vote(
-    _repo: &impl QuestionRepository,
-    _question_id: Uuid,
-    _option_id: Uuid,
-    _session_id: Uuid,
+    repo: &impl QuestionRepository,
+    question_id: Uuid,
+    option_id: Uuid,
+    session_id: Uuid,
 ) -> Result<Vote, CastVoteError> {
-    todo!()
+    let q = repo
+        .find_by_id(question_id)
+        .await?
+        .ok_or(CastVoteError::QuestionNotFound)?;
+    if option_id != q.question.option_a_id && option_id != q.question.option_b_id {
+        return Err(CastVoteError::InvalidOption);
+    }
+    let vote = Vote {
+        id: uuid::Uuid::new_v4(),
+        question_id,
+        session_id,
+        option_id,
+        created_at: Utc::now(),
+    };
+    repo.record_vote(&vote).await?;
+    Ok(vote)
 }

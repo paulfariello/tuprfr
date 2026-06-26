@@ -104,15 +104,69 @@ impl QuestionRepository for SqlxQuestionRepository {
         todo!()
     }
 
-    async fn find_by_id(&self, _id: Uuid) -> Result<Option<QuestionWithOptions>, RepositoryError> {
-        todo!()
+    async fn find_by_id(&self, id: Uuid) -> Result<Option<QuestionWithOptions>, RepositoryError> {
+        sqlx::query_as::<_, QuestionWithOptionsRow>(
+            "SELECT q.id AS question_id,
+                    q.option_a_id,
+                    q.option_b_id,
+                    q.status,
+                    q.author_session_id,
+                    q.is_anonymous,
+                    q.created_at,
+                    oa.id   AS opt_a_id,
+                    oa.text AS opt_a_text,
+                    ob.id   AS opt_b_id,
+                    ob.text AS opt_b_text
+             FROM questions q
+             JOIN options oa ON q.option_a_id = oa.id
+             JOIN options ob ON q.option_b_id = ob.id
+             WHERE q.id = $1",
+        )
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| RepositoryError::Database(e.to_string()))
+        .map(|opt| opt.map(QuestionWithOptions::from))
     }
 
-    async fn vote_counts(&self, _question_id: Uuid) -> Result<(u64, u64), RepositoryError> {
-        todo!()
+    async fn vote_counts(&self, question_id: Uuid) -> Result<(u64, u64), RepositoryError> {
+        #[derive(sqlx::FromRow)]
+        struct VoteCounts {
+            count_a: i64,
+            count_b: i64,
+        }
+        let row = sqlx::query_as::<_, VoteCounts>(
+            "SELECT
+               COALESCE(SUM(CASE WHEN v.option_id = q.option_a_id THEN 1 ELSE 0 END), 0)::bigint AS count_a,
+               COALESCE(SUM(CASE WHEN v.option_id = q.option_b_id THEN 1 ELSE 0 END), 0)::bigint AS count_b
+             FROM questions q
+             LEFT JOIN votes v ON v.question_id = q.id
+             WHERE q.id = $1
+             GROUP BY q.id",
+        )
+        .bind(question_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| RepositoryError::Database(e.to_string()))?;
+        Ok(row.map_or((0, 0), |r| {
+            (r.count_a.cast_unsigned(), r.count_b.cast_unsigned())
+        }))
     }
 
-    async fn record_vote(&self, _vote: &Vote) -> Result<(), RepositoryError> {
-        todo!()
+    async fn record_vote(&self, vote: &Vote) -> Result<(), RepositoryError> {
+        sqlx::query(
+            "INSERT INTO votes (id, question_id, session_id, option_id, created_at)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (question_id, session_id) DO NOTHING",
+        )
+        .bind(vote.id)
+        .bind(vote.question_id)
+        .bind(vote.session_id)
+        .bind(vote.option_id)
+        .bind(vote.created_at)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| RepositoryError::Database(e.to_string()))?;
+        Ok(())
     }
 }
