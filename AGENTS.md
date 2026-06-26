@@ -77,6 +77,7 @@ Bad `/loop` targets: anything where "done" is subjective at the spec level (styl
 - Conventional commits, explaining _why_ not _what_: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`.
 - Small, focused, atomic, tested. Each commit must be `git bisect`-safe.
 - Always on a dedicated branch.
+- Semi-linear history: merge feature branches into main with `--no-ff` so the branch topology stays visible. Never fast-forward.
 - Pre-commit hook should reject strings matching common secret patterns (`AKIA*`, `ghp_*`, `eyJ*`, `-----BEGIN`).
 - When closing a TODO item, update and commit the TODO file alongside the code change.
 
