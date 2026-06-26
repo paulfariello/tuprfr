@@ -2,13 +2,13 @@ use crate::adapters::inbound::http::error::AppError;
 use crate::adapters::outbound::db::question_repo::SqlxQuestionRepository;
 use crate::application::use_cases::cast_vote::cast_vote;
 use crate::application::use_cases::get_next_question::get_next_question;
+use crate::application::use_cases::submit_question::{submit_question, SubmitError};
 use crate::domain::model::SessionData;
 use crate::domain::ports::question_repository::QuestionRepository;
 use crate::AppState;
 use askama::Template;
 use axum::{
     extract::{Form, Path, State},
-    http::StatusCode,
     response::{IntoResponse, Redirect, Response},
     routing::{get, post},
     Router,
@@ -40,6 +40,24 @@ struct QuestionTemplate {
 #[derive(Template)]
 #[template(path = "pool_exhaustion.html")]
 struct PoolExhaustionTemplate;
+
+#[derive(serde::Deserialize)]
+struct SubmitForm {
+    option_a: String,
+    option_b: String,
+}
+
+#[derive(Template)]
+#[template(path = "question_new.html")]
+struct QuestionNewTemplate;
+
+#[derive(Template)]
+#[template(path = "submission_success.html")]
+struct SubmissionSuccessTemplate;
+
+#[derive(Template)]
+#[template(path = "submission_error.html")]
+struct SubmissionErrorTemplate;
 
 #[derive(serde::Deserialize)]
 struct SkipForm {
@@ -144,12 +162,38 @@ async fn post_skip_handler(
 async fn get_new_question_form_handler(
     State(_state): State<AppState>,
     _session: Session,
-) -> StatusCode {
-    StatusCode::NOT_IMPLEMENTED
+) -> impl IntoResponse {
+    QuestionNewTemplate.into_response()
 }
 
-async fn post_question_handler(State(_state): State<AppState>, _session: Session) -> StatusCode {
-    StatusCode::NOT_IMPLEMENTED
+async fn post_question_handler(
+    State(state): State<AppState>,
+    session: Session,
+    Form(form): Form<SubmitForm>,
+) -> Result<impl IntoResponse, AppError> {
+    let mut session_data: SessionData = session
+        .get(SESSION_KEY)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .unwrap_or_default();
+    if session_data.id.is_none() {
+        session_data.id = Some(Uuid::new_v4());
+        session
+            .insert(SESSION_KEY, &session_data)
+            .await
+            .map_err(|e| AppError::Internal(e.to_string()))?;
+    }
+    let session_id = session_data.id.unwrap();
+    let repo = SqlxQuestionRepository::new(state.db);
+    let mode = repo
+        .submission_mode()
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    match submit_question(&repo, form.option_a, form.option_b, session_id, mode).await {
+        Ok(_) => Ok(SubmissionSuccessTemplate.into_response()),
+        Err(SubmitError::EmptyOption) => Ok(SubmissionErrorTemplate.into_response()),
+        Err(SubmitError::Repository(e)) => Err(AppError::Internal(e.to_string())),
+    }
 }
 
 async fn get_question_results_handler(

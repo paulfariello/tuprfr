@@ -1,4 +1,4 @@
-use crate::domain::model::{Question, QuestionOption, QuestionWithOptions, Vote};
+use crate::domain::model::{Question, QuestionOption, QuestionWithOptions, SubmissionMode, Vote};
 use async_trait::async_trait;
 use std::collections::HashSet;
 use uuid::Uuid;
@@ -30,4 +30,6 @@ pub trait QuestionRepository {
     async fn vote_counts(&self, question_id: Uuid) -> Result<(u64, u64), RepositoryError>;
 
     async fn record_vote(&self, vote: &Vote) -> Result<(), RepositoryError>;
+
+    async fn submission_mode(&self) -> Result<SubmissionMode, RepositoryError>;
 }

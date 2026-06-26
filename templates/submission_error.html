@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tu préfères ? — Erreur</title>
+</head>
+<body>
+  <main>
+    <section data-testid="submission-error">
+      <p>Les deux options sont obligatoires.</p>
+    </section>
+    <form method="post" action="/questions">
+      <label>
+        Option A
+        <input type="text" name="option_a" data-testid="option-a-input">
+      </label>
+      <label>
+        Option B
+        <input type="text" name="option_b" data-testid="option-b-input">
+      </label>
+      <button type="submit" data-testid="submit-button">Proposer</button>
+    </form>
+  </main>
+</body>
+</html>

@@ -1,4 +1,6 @@
-use crate::domain::model::{Question, QuestionOption, QuestionWithOptions, Status, Vote};
+use crate::domain::model::{
+    Question, QuestionOption, QuestionWithOptions, Status, SubmissionMode, Vote,
+};
 use crate::domain::ports::question_repository::{QuestionRepository, RepositoryError};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
@@ -97,11 +99,45 @@ impl QuestionRepository for SqlxQuestionRepository {
 
     async fn save(
         &self,
-        _question: &Question,
-        _option_a: &QuestionOption,
-        _option_b: &QuestionOption,
+        question: &Question,
+        option_a: &QuestionOption,
+        option_b: &QuestionOption,
     ) -> Result<(), RepositoryError> {
-        todo!()
+        let mut tx = self
+            .pool
+            .begin()
+            .await
+            .map_err(|e| RepositoryError::Database(e.to_string()))?;
+        sqlx::query("INSERT INTO options (id, text) VALUES ($1, $2)")
+            .bind(option_a.id)
+            .bind(&option_a.text)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| RepositoryError::Database(e.to_string()))?;
+        sqlx::query("INSERT INTO options (id, text) VALUES ($1, $2)")
+            .bind(option_b.id)
+            .bind(&option_b.text)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| RepositoryError::Database(e.to_string()))?;
+        sqlx::query(
+            "INSERT INTO questions \
+             (id, option_a_id, option_b_id, status, author_session_id, is_anonymous, created_at) \
+             VALUES ($1, $2, $3, $4, $5, $6, $7)",
+        )
+        .bind(question.id)
+        .bind(question.option_a_id)
+        .bind(question.option_b_id)
+        .bind(question.status.to_string())
+        .bind(question.author_session_id)
+        .bind(question.is_anonymous)
+        .bind(question.created_at)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| RepositoryError::Database(e.to_string()))?;
+        tx.commit()
+            .await
+            .map_err(|e| RepositoryError::Database(e.to_string()))
     }
 
     async fn find_by_id(&self, id: Uuid) -> Result<Option<QuestionWithOptions>, RepositoryError> {
@@ -168,5 +204,18 @@ impl QuestionRepository for SqlxQuestionRepository {
         .await
         .map_err(|e| RepositoryError::Database(e.to_string()))?;
         Ok(())
+    }
+
+    async fn submission_mode(&self) -> Result<SubmissionMode, RepositoryError> {
+        let row: (String,) =
+            sqlx::query_as("SELECT value FROM settings WHERE key = 'submission_mode'")
+                .fetch_one(&self.pool)
+                .await
+                .map_err(|e| RepositoryError::Database(e.to_string()))?;
+        Ok(if row.0 == "open" {
+            SubmissionMode::Open
+        } else {
+            SubmissionMode::Moderated
+        })
     }
 }
