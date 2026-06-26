@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tu préfères ? — Bravo !</title>
+</head>
+<body>
+  <main>
+    <section data-testid="pool-exhaustion">
+      <h1>Bravo, tu as tout vu !</h1>
+      <p>Tu as répondu à toutes les questions disponibles. Pourquoi ne pas en proposer une ?</p>
+      <form method="post" action="/questions" data-testid="submit-form">
+        <label>
+          Option A
+          <input type="text" name="option_a" data-testid="option-a-input" required>
+        </label>
+        <label>
+          Option B
+          <input type="text" name="option_b" data-testid="option-b-input" required>
+        </label>
+        <button type="submit" data-testid="submit-button">Proposer</button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

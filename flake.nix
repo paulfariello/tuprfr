@@ -27,6 +27,24 @@
           sqlite
         ];
 
+        registriesConf = pkgs.writeText "registries.conf" ''
+          [registries.search]
+          registries = ['docker.io']
+
+          [registries.block]
+          registries = []
+        '';
+
+        podmanSetupScript = pkgs.writeScript "podman-setup" ''
+          #!${pkgs.runtimeShell}
+          if ! test -f ~/.config/containers/policy.json; then
+            install -Dm555 ${pkgs.skopeo.src}/default-policy.json ~/.config/containers/policy.json
+          fi
+          if ! test -f ~/.config/containers/registries.conf; then
+            install -Dm555 ${registriesConf} ~/.config/containers/registries.conf
+          fi
+        '';
+
       in {
         devShells = {
           default = pkgs.mkShell {
@@ -42,9 +60,21 @@
               git
               pre-commit
               nodejs
+              sqlx-cli
               playwright-driver
+              playwright-driver.browsers
               markdownlint-cli2
+              podman
+              skopeo
+              slirp4netns
+              fuse-overlayfs
             ]);
+
+            shellHook = ''
+              export PLAYWRIGHT_BROWSERS_PATH=${pkgs.playwright-driver.browsers}
+              export PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true
+              ${podmanSetupScript}
+            '';
           };
         };
       }
