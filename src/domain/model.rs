@@ -54,7 +54,7 @@ impl std::fmt::Display for Status {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
 pub enum SubmissionMode {
     Open,
     Moderated,

@@ -17,7 +17,7 @@ async function waitForServer(): Promise<void> {
 
 async function startServer(): Promise<ChildProcess> {
   const server = spawn('./target/debug/tuprfr', {
-    env: { ...process.env, DATABASE_URL: DB_URL },
+    env: { ...process.env, TUPRFR_DATABASE__URL: DB_URL },
     stdio: 'ignore',
   });
   await waitForServer();
