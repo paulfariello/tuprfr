@@ -21,8 +21,11 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 
-# idna_adapter >= 1.2 switched to edition 2024 (requires Rust >= 1.85); pin for 1.81 compat.
+# Pins below keep the dep graph compatible with Rust 1.81 (edition 2024 requires >= 1.85).
+# To find further offenders on the prod machine after `cargo fetch`:
+#   grep -rl 'edition = "2024"' ~/.cargo/registry/src/ | sed 's|.*/\([^/]*\)/Cargo.toml|\1|'
 idna_adapter = ">=1, <1.2"
+home = ">=0.5, <0.5.12"
 
 [dev-dependencies]
 testcontainers = "0.23"
