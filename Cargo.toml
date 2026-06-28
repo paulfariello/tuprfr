@@ -21,6 +21,9 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 
+# idna_adapter >= 1.2 switched to edition 2024 (requires Rust >= 1.85); pin for 1.81 compat.
+idna_adapter = ">=1, <1.2"
+
 [dev-dependencies]
 testcontainers = "0.23"
 testcontainers-modules = { version = "0.11", features = ["postgres"] }
