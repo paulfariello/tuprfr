@@ -1,27 +1,22 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tu préfères ? — Bravo !</title>
-</head>
-<body>
-  <main>
-    <section data-testid="pool-exhaustion">
-      <h1>Bravo, tu as tout vu !</h1>
-      <p>Tu as répondu à toutes les questions disponibles. Pourquoi ne pas en proposer une ?</p>
-      <form method="post" action="/questions" data-testid="submit-form">
-        <label>
-          Option A
-          <input type="text" name="option_a" data-testid="option-a-input" required>
-        </label>
-        <label>
-          Option B
-          <input type="text" name="option_b" data-testid="option-b-input" required>
-        </label>
-        <button type="submit" data-testid="submit-button">Proposer</button>
-      </form>
-    </section>
-  </main>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Tu préfères ? — Bravo !{% endblock %}
+{% block body %}
+<section data-testid="pool-exhaustion" class="card-page">
+  <div class="card">
+    <p class="card__eyebrow">Fin du jeu</p>
+    <h1 class="card__title">Tu as tout vu !</h1>
+    <p class="card__body">Tu as répondu à toutes les questions disponibles. Pourquoi ne pas en proposer une ?</p>
+    <form method="post" action="/questions" data-testid="submit-form">
+      <div class="field">
+        <label for="pe-opt-a">Option A</label>
+        <input id="pe-opt-a" type="text" name="option_a" data-testid="option-a-input" required placeholder="Première option…">
+      </div>
+      <div class="field">
+        <label for="pe-opt-b">Option B</label>
+        <input id="pe-opt-b" type="text" name="option_b" data-testid="option-b-input" required placeholder="Deuxième option…">
+      </div>
+      <button class="submit-btn" type="submit" data-testid="submit-button">Proposer</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

@@ -1,17 +1,21 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tu préfères ? — Résultats</title>
-</head>
-<body>
-  <main>
-    <section data-testid="results">
-      <div data-testid="result-a-count">{{ count_a }}</div>
-      <div data-testid="result-b-count">{{ count_b }}</div>
-    </section>
-    <a href="/" data-testid="next-button">Suivante</a>
-  </main>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Tu préfères ? — Résultats{% endblock %}
+{% block body %}
+<section data-testid="results" class="arena">
+  <div class="result-half result-half--a" style="--fill: {{ pct_a }}%">
+    <span class="result-label">{{ option_a_text }}</span>
+    <span class="result-pct">{{ pct_a }}%</span>
+    <span class="result-count" data-testid="result-a-count">{{ count_a }} vote{% if count_a != 1 %}s{% endif %}</span>
+    <div class="result-bar"></div>
+  </div>
+  <div class="next-strip">
+    <a href="/" class="next-link" data-testid="next-button">Suivante →</a>
+  </div>
+  <div class="result-half result-half--b" style="--fill: {{ pct_b }}%">
+    <span class="result-label">{{ option_b_text }}</span>
+    <span class="result-pct">{{ pct_b }}%</span>
+    <span class="result-count" data-testid="result-b-count">{{ count_b }} vote{% if count_b != 1 %}s{% endif %}</span>
+    <div class="result-bar"></div>
+  </div>
+</section>
+{% endblock %}

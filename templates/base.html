@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Tu préfères ?{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --c-bg:     #eff1f5;  /* Latte Base */
+      --c-a:      #1e66f5;  /* Latte Blue */
+      --c-a-soft: #dde5ff;  /* Base + Blue tint */
+      --c-b:      #fe640b;  /* Latte Peach */
+      --c-b-soft: #ffeadb;  /* Base + Peach tint */
+      --c-text:   #4c4f69;  /* Latte Text */
+      --c-muted:  #8c8fa1;  /* Latte Overlay1 */
+      --c-rule:   #ccd0da;  /* Latte Surface0 */
+      --f-display: 'Syne', sans-serif;
+      --f-body:    'DM Sans', sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--c-bg);
+      color: var(--c-text);
+      font-family: var(--f-body);
+    }
+
+    /* ── Arena: split-screen question / results layout ── */
+
+    .arena {
+      display: grid;
+      grid-template-rows: 1fr auto 1fr;
+      height: 100dvh;
+    }
+
+    /* ── Vote buttons (the two halves) ── */
+
+    .half {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2.5rem;
+      font-family: var(--f-display);
+      font-size: clamp(1.25rem, 3vw + 0.75rem, 2.75rem);
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.2;
+      word-break: break-word;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.16s ease, color 0.16s ease;
+    }
+
+    .half--a {
+      background: var(--c-a-soft);
+      color: var(--c-text);
+    }
+
+    .half--a:hover,
+    .half--a:focus-visible {
+      background: var(--c-a);
+      color: #fff;
+      outline: none;
+    }
+
+    .half--b {
+      background: var(--c-b-soft);
+      color: var(--c-text);
+    }
+
+    .half--b:hover,
+    .half--b:focus-visible {
+      background: var(--c-b);
+      color: #fff;
+      outline: none;
+    }
+
+    /* ── Centerline divider ── */
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 0.875rem;
+      padding: 0 1.5rem;
+      min-height: 2.75rem;
+      background: var(--c-bg);
+      position: relative;
+      z-index: 1;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--c-rule);
+    }
+
+    .divider__label {
+      font-size: 0.58rem;
+      font-weight: 500;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--c-muted);
+      white-space: nowrap;
+    }
+
+    /* ── Skip button ── */
+
+    .skip-wrap {
+      position: fixed;
+      bottom: 1.25rem;
+      right: 1.5rem;
+      z-index: 10;
+    }
+
+    .skip-btn {
+      background: none;
+      border: none;
+      font-family: var(--f-body);
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--c-muted);
+      cursor: pointer;
+      letter-spacing: 0.06em;
+      padding: 0.5rem 0;
+    }
+
+    .skip-btn:hover { color: var(--c-text); }
+
+    /* ── Results: percentage bars and vote counts ── */
+
+    .result-half {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .result-half--a { background: var(--c-a-soft); }
+    .result-half--b { background: var(--c-b-soft); }
+
+    .result-label {
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--c-muted);
+      position: relative;
+      z-index: 1;
+      max-width: 20rem;
+      text-align: center;
+    }
+
+    .result-pct {
+      font-family: var(--f-display);
+      font-size: clamp(3rem, 13vw, 5.5rem);
+      font-weight: 800;
+      line-height: 1;
+      position: relative;
+      z-index: 1;
+    }
+
+    .result-half--a .result-pct { color: var(--c-a); }
+    .result-half--b .result-pct { color: var(--c-b); }
+
+    .result-count {
+      font-size: 0.7rem;
+      color: var(--c-muted);
+      position: relative;
+      z-index: 1;
+    }
+
+    .result-bar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 0;
+      opacity: 0.22;
+    }
+
+    .result-half--a .result-bar {
+      bottom: 0;
+      background: var(--c-a);
+      animation: bar-fill 0.65s cubic-bezier(0.34, 1.2, 0.64, 1) 0.12s forwards;
+    }
+
+    .result-half--b .result-bar {
+      top: 0;
+      background: var(--c-b);
+      animation: bar-fill 0.65s cubic-bezier(0.34, 1.2, 0.64, 1) 0.12s forwards;
+    }
+
+    @keyframes bar-fill {
+      from { height: 0 }
+      to   { height: var(--fill) }
+    }
+
+    /* ── Next strip (results page) ── */
+
+    .next-strip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2.75rem;
+      background: var(--c-bg);
+      position: relative;
+      z-index: 1;
+    }
+
+    .next-strip::before,
+    .next-strip::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0;
+      height: 1px;
+      background: var(--c-rule);
+    }
+
+    .next-strip::before { top: 0; }
+    .next-strip::after  { bottom: 0; }
+
+    .next-link {
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--c-text);
+      text-decoration: none;
+      padding: 0 2rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .next-link:hover { color: var(--c-muted); }
+
+    /* ── Card layout (form screens) ── */
+
+    .card-page {
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 1.5rem;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 440px;
+    }
+
+    .card__eyebrow {
+      font-size: 0.58rem;
+      font-weight: 500;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--c-muted);
+      margin-bottom: 1rem;
+    }
+
+    .card__title {
+      font-family: var(--f-display);
+      font-size: clamp(1.75rem, 6vw, 2.5rem);
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 1.25rem;
+    }
+
+    .card__body {
+      font-size: 0.875rem;
+      color: var(--c-muted);
+      margin-bottom: 2rem;
+      line-height: 1.65;
+    }
+
+    /* ── Form fields ── */
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+      margin-bottom: 1rem;
+    }
+
+    .field label {
+      font-size: 0.58rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--c-muted);
+    }
+
+    .field input {
+      border: 1.5px solid var(--c-rule);
+      border-radius: 0;
+      background: #fff;
+      font-family: var(--f-body);
+      font-size: 1rem;
+      padding: 0.75rem 1rem;
+      color: var(--c-text);
+      outline: none;
+      transition: border-color 0.14s ease;
+      -webkit-appearance: none;
+      width: 100%;
+    }
+
+    .field input:focus { border-color: var(--c-a); }
+
+    .submit-btn {
+      width: 100%;
+      background: var(--c-text);
+      color: #fff;
+      border: none;
+      font-family: var(--f-body);
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 0.9rem 1.5rem;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      transition: background 0.14s ease;
+    }
+
+    .submit-btn:hover { background: #333; }
+
+    /* ── Status messages ── */
+
+    .error-msg {
+      font-size: 0.82rem;
+      color: var(--c-b);
+      margin-bottom: 1.25rem;
+    }
+
+    .back-link {
+      font-size: 0.68rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--c-muted);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .back-link:hover { color: var(--c-text); }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+{% block body %}{% endblock %}
+</body>
+</html>

@@ -1,28 +1,24 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tu préfères ?</title>
-</head>
-<body>
-  <main>
-    <section data-testid="question">
-      <h1>Tu préfères ?</h1>
-      <form method="post" action="/votes">
-        <input type="hidden" name="question_id" value="{{ question_id }}">
-        <button type="submit" name="option_id" value="{{ option_a_id }}" data-testid="option-a">
-          {{ option_a_text }}
-        </button>
-        <button type="submit" name="option_id" value="{{ option_b_id }}" data-testid="option-b">
-          {{ option_b_text }}
-        </button>
-      </form>
-      <form method="post" action="/skips">
-        <input type="hidden" name="question_id" value="{{ question_id }}">
-        <button type="submit" data-testid="skip-button">Passer</button>
-      </form>
-    </section>
-  </main>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Tu préfères ?{% endblock %}
+{% block body %}
+<section data-testid="question">
+  <form class="arena" method="post" action="/votes">
+    <input type="hidden" name="question_id" value="{{ question_id }}">
+    <button class="half half--a" type="submit" name="option_id" value="{{ option_a_id }}" data-testid="option-a">
+      {{ option_a_text }}
+    </button>
+    <div class="divider">
+      <span class="divider__label">Tu préfères ?</span>
+    </div>
+    <button class="half half--b" type="submit" name="option_id" value="{{ option_b_id }}" data-testid="option-b">
+      {{ option_b_text }}
+    </button>
+  </form>
+</section>
+<div class="skip-wrap">
+  <form method="post" action="/skips">
+    <input type="hidden" name="question_id" value="{{ question_id }}">
+    <button class="skip-btn" type="submit" data-testid="skip-button">Passer →</button>
+  </form>
+</div>
+{% endblock %}

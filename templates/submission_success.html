@@ -1,16 +1,12 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tu préfères ? — Merci !</title>
-</head>
-<body>
-  <main>
-    <section data-testid="submission-success">
-      <h1>Merci pour ta proposition !</h1>
-      <a href="/">Retour au jeu</a>
-    </section>
-  </main>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Tu préfères ? — Merci !{% endblock %}
+{% block body %}
+<main class="card-page">
+  <section data-testid="submission-success" class="card">
+    <p class="card__eyebrow">Merci !</p>
+    <h1 class="card__title">Proposition reçue</h1>
+    <p class="card__body">Ta question a bien été reçue. Elle sera examinée avant d'être publiée.</p>
+    <a href="/" class="back-link">← Retour au jeu</a>
+  </section>
+</main>
+{% endblock %}

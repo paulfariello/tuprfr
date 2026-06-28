@@ -1,24 +1,22 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tu préfères ? — Proposer une question</title>
-</head>
-<body>
-  <main>
-    <h1>Proposer une question</h1>
+{% extends "base.html" %}
+{% block title %}Tu préfères ? — Proposer une question{% endblock %}
+{% block body %}
+<main class="card-page">
+  <div class="card">
+    <p class="card__eyebrow">Proposer</p>
+    <h1 class="card__title">Tu préfères…</h1>
+    <p class="card__body">Invente une nouvelle question pour la communauté.</p>
     <form method="post" action="/questions">
-      <label>
-        Option A
-        <input type="text" name="option_a" data-testid="option-a-input">
-      </label>
-      <label>
-        Option B
-        <input type="text" name="option_b" data-testid="option-b-input">
-      </label>
-      <button type="submit" data-testid="submit-button">Proposer</button>
+      <div class="field">
+        <label for="opt-a">Option A</label>
+        <input id="opt-a" type="text" name="option_a" data-testid="option-a-input" placeholder="Première option…">
+      </div>
+      <div class="field">
+        <label for="opt-b">Option B</label>
+        <input id="opt-b" type="text" name="option_b" data-testid="option-b-input" placeholder="Deuxième option…">
+      </div>
+      <button class="submit-btn" type="submit" data-testid="submit-button">Proposer</button>
     </form>
-  </main>
-</body>
-</html>
+  </div>
+</main>
+{% endblock %}

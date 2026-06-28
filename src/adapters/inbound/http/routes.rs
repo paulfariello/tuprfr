@@ -75,6 +75,10 @@ struct VoteForm {
 struct ResultsTemplate {
     count_a: u64,
     count_b: u64,
+    option_a_text: String,
+    option_b_text: String,
+    pct_a: u64,
+    pct_b: u64,
 }
 
 const SESSION_KEY: &str = "data";
@@ -206,5 +210,23 @@ async fn get_question_results_handler(
         .vote_counts(id)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    Ok(ResultsTemplate { count_a, count_b }.into_response())
+    let question = repo
+        .find_by_id(id)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    let (text_a, text_b) = question
+        .map(|q| (q.option_a.text, q.option_b.text))
+        .unwrap_or_default();
+    let total = count_a + count_b;
+    let pct_a = (count_a * 100).checked_div(total).unwrap_or(50);
+    let pct_b = 100 - pct_a;
+    Ok(ResultsTemplate {
+        count_a,
+        count_b,
+        option_a_text: text_a,
+        option_b_text: text_b,
+        pct_a,
+        pct_b,
+    }
+    .into_response())
 }
